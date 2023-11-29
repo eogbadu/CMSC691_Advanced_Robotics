@@ -78,6 +78,12 @@ df.dropna(subset=['Dialogue Move'], inplace=True)
 # into one DataFrame
 df.drop(labels=['DM->RN', 'RN', 'DM->CMD', 'Transaction', 'Antecedent', 'Relation', 'Contextual Info', 'Notes', 'Parameter Type'], axis=1, inplace=True)
  
+# Set the 5 control signals
+control_signals = ['explore', 'move', 'send image', 'stop', 'turn']
+
+# Select rows where the signals are present
+df = df[df['Dialogue Move'].isin(control_signals)]
+
 # exports the dataframe into excel file
 # with specified name.
 df.to_excel(os.path.join(processed_path,'oneandtwowithfilepath.xlsx'), index=False)

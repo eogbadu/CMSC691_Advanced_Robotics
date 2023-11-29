@@ -22,7 +22,7 @@
         <div>
             <input type='radio' name='reported_signal' value='Turn'>Turn<br>
             <input type='radio' name='reported_signal' value='Move'>Move<br>
-            <input type='radio' name='reported_signal' value='Send Image'>Send Image<br>
+            <input type='radio' name='reported_signal' value='Send image'>Send Image<br>
             <input type='radio' name='reported_signal' value='Stop'>Stop<br>
             <input type='radio' name='reported_signal' value='Explore'>Explore<br>
             <input type='radio' name='reported_signal' value='None of the Above'>None of the Above<br>

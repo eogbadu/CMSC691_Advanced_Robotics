@@ -2,7 +2,8 @@ import boto3
 from config import access_id, secret_key, my_region_name
 import os
 import base64
-
+import random  # to select a random row from our pair df
+import sys 
 
 region_name = my_region_name
 aws_access_key_id = access_id
@@ -42,17 +43,38 @@ hit_type_id = my_hit_type['HITTypeId']
 #Extract the template string 
 template_string = '"Text to Replace"'
 
-number_hits = 1
-count = 0
-for i in range(number_hits):
-    # Create a new hit using the hit type
-    #Extract the command from the pair table
-    command_string = "Turn left 45 degrees"
+# Get the current directory
+current_directory = os.getcwd()
 
-    #Find the image path
+# Get the parent directory 
+parent_directory = os.path.dirname(current_directory)
+
+# add the parent directory to the list of module locations
+sys.path.append(parent_directory)
+
+# Now import the final df from the combine_excel file
+from combine_excel import df
+
+random_indices = random.sample(range(0, len(df)), 10)
+
+print(random_indices)
+
+number_hits = 1 # change this to 500 when you are ready
+
+for i in range(number_hits):
+    #Iterate through random indices and select the index
+    random_index = random_indices[i]
+    
+    #Extract the command from the pair table
+    random_row = df.iloc[random_index]
+    
+    command_string = random_row['Commander']
+
+    # Find the image path
+    # comment out to replace placeholder cat
     image_path = os.path.abspath("cat.jpg")
 
-    # Get the image path
+    # Get the image path from video files
     #image_path = '/path/to/your/image_directory/data.jpg'
 
     # Read and encode each image as base 64
@@ -69,6 +91,8 @@ for i in range(number_hits):
         LifetimeInSeconds=172800,
         Question = question.replace(template_string, command_string)
     )
+
+    # Create a second hit with the image included
 
     # Print out the HIT related info
     print("A new HIT has been created. You can preview it here:")

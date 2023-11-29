@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # Constants
-PROCESSED_DATA_FILE = 'processed_data/pair_data.xlsx'
+PROCESSED_DATA_FILE = 'processed_data/pair_data.xlsx' # exp1 and 2 just the 5 commands
 SHEET_NAME = 'Sheet1'
 COLUMN_TO_EDIT = 'Dialogue Move'
 PROCESSED_DATA_PATH = 'processed_data'

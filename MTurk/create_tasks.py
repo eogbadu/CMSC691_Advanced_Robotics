@@ -19,7 +19,10 @@ client = boto3.client(
 # This will return $10,000.00 in the MTurk Developer Sandbox
 print("I have $" + client.get_account_balance()['AvailableBalance'] + " in my Sandbox account")
 
+# Read the question file
 question = open(file ='questions.xml',mode='r').read()
+
+# Create a new HIT
 new_hit = client.create_hit(
     Title = 'Is this Tweet happy, angry, excited, scared, annoyed or upset?',
     Description = 'Read this tweet and type out one word to describe the emotion of the person posting it: happy, angry, scared, annoyed or upset',
@@ -32,6 +35,7 @@ new_hit = client.create_hit(
     Question = question,
 )
 
+# Print out the HIT related info
 print("A new HIT has been created. You can preview it here:")
 print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + new_hit['HIT']['HITGroupId'])
 print ("HITID = " + new_hit['HIT']['HITId'] + " (Use to Get Results)")

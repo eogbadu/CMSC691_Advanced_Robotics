@@ -24,13 +24,14 @@ new_hit = client.create_hit(
     Title = 'Is this Tweet happy, angry, excited, scared, annoyed or upset?',
     Description = 'Read this tweet and type out one word to describe the emotion of the person posting it: happy, angry, scared, annoyed or upset',
     Keywords = 'text, quick, labeling',
-    Reward = '0.15',
+    Reward = '0.10',
     MaxAssignments = 1,
     LifetimeInSeconds = 172800,
     AssignmentDurationInSeconds = 600,
-    AutoApprovalDelayInSeconds = 14400,
+    AutoApprovalDelayInSeconds = 172800,
     Question = question,
 )
+
 print("A new HIT has been created. You can preview it here:")
 print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + new_hit['HIT']['HITGroupId'])
 print ("HITID = " + new_hit['HIT']['HITId'] + " (Use to Get Results)")

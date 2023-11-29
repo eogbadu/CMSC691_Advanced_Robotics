@@ -5,8 +5,8 @@ processed_data
 #virtual environment
 virtualenv
 
-MTurk/config.py
-MTurk/__pycache__
+mturk/config.py
+mturk/__pycache__
 __pycache__
 
 

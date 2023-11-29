@@ -1,0 +1,37 @@
+<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
+<HTMLContent><![CDATA[
+<!-- YOUR HTML BEGINS -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+    <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+</head>
+<body>
+    <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
+        <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+        <h2>Given the instruction below select the most appropriate response or action from the list provided. 
+        You may be provided an image for additional context.
+        If it is unclear, select in "None of the above".</h2>
+        <h3> Instruction: "Text to Replace"</h3>
+        <div>
+            <!-- Image placeholder -->
+            <img src='data:image/jpeg;base64,YOUR_IMAGE_DATA' alt='Image Placeholder' width='300' height='200'>
+            <!-- Replace 'YOUR_IMAGE_DATA' with the iterated image -->
+        </div>
+        <div>
+            <input type='radio' name='reported_signal' value='Turn'>Turn<br>
+            <input type='radio' name='reported_signal' value='Move'>Move<br>
+            <input type='radio' name='reported_signal' value='Send Image'>Send Image<br>
+            <input type='radio' name='reported_signal' value='Stop'>Stop<br>
+            <input type='radio' name='reported_signal' value='Explore'>Explore<br>
+            <input type='radio' name='reported_signal' value='None of the Above'>None of the Above<br>
+        </div>
+    <p><input type='submit' id='submitButton' value='Submit' /></p></form>
+<script language='Javascript'>turkSetAssignmentID();</script>
+</body></html>
+<!-- YOUR HTML ENDS -->
+]]>
+</HTMLContent>
+<FrameHeight>600</FrameHeight>
+</HTMLQuestion>

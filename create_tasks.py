@@ -1,11 +1,11 @@
 import boto3
-from config import access_id, secret_key, my_region_name
+from mturk.config import access_id, secret_key, my_region_name
 import os
 import base64
 import random  # to select a random row from our pair df
 import sys 
 import pandas as pd
-#import get_frames as gf
+import get_frames as gf
 
 # Constants
 IMAGES_PATH = 'images'
@@ -21,10 +21,7 @@ def read_pair_data():
     # Get the current directory
     current_directory = os.getcwd()
 
-    # Get the parent directory 
-    parent_directory = os.path.dirname(current_directory)
-
-    processed_path = os.path.join(parent_directory, 'processed_data')
+    processed_path = os.path.join(current_directory, 'processed_data')
 
     processed_pairs_file = os.path.join(processed_path,'oneandtwowithfilepath.xlsx')
    
@@ -77,13 +74,13 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client,hit_type_id,random_indices,images_path,is_image_included = False):
+def create_hits(client,hit_type_id,random_indices,is_image_included = False):
     
     # read the pair data df
     df = read_pair_data() 
     
     # Read the question file
-    question = open(file ='question.xml',mode='r').read()
+    question = open(file ='mturk/question.xml',mode='r').read()
 
     #Extract the template string 
     template_string = '"Text to Replace"'
@@ -179,20 +176,6 @@ def get_image(df_row):
     # Get the frames
     timestamp = df_row["Timestamp"]
     image_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_" + f'{timestamp:.2f}' + "_navigator.jpg"
-    
-    # Get the current working directory
-    current_dir = os.getcwd()
-
-    # Get the parent directory 
-    main_directory = os.path.dirname(current_dir)  
-
-    # Get the path of the main directory
-    main_dir_path = os.path.abspath(main_directory)
-
-    # Add the main directory to the sys.path temporarily
-    sys.path.append(main_dir_path)
-
-    import get_frames as gf
 
     gf.GetFrames(timestamp, video_path, image_filename)
 
@@ -211,11 +194,8 @@ def encode_image(df, df_index):
     # Get the current directory
     current_directory = os.getcwd()
 
-    # Get the parent directory 
-    parent_directory = os.path.dirname(current_directory)
-
     # get the images directory
-    images_dir = os.path.join(parent_directory, IMAGES_PATH)
+    images_dir = os.path.join(current_directory, IMAGES_PATH)
 
     # set the image_path
     image_path =  os.path.join(images_dir, image_filename)
@@ -229,34 +209,32 @@ def encode_image(df, df_index):
 if __name__ == "__main__":
     #check if user passes data folder argument
     if len(sys.argv) > 1:
-        # accept the second argument as the images file
-        images_path = sys.argv[1]
+        # accept the second argument as the number hits
+        number_hits = int(sys.argv[1])
        
         # setup the client
         client = client_setup()
 
         # import the pair data df
         df = read_pair_data()
-
-        #set number of hits desired
-        number_hits = 1
-        
+       
         # Create random indices needed
         random_indices = create_indices(number_hits, df)
 
         hit_type_id = create_hit_type(client)
 
         # create hits without image included
-        create_hits(client,hit_type_id,random_indices,images_path,is_image_included = False)
+        create_hits(client,hit_type_id,random_indices,is_image_included = False)
         
         # shuffle the indices
         shuffle_indices(random_indices)
     
         # create hits with image included
-        create_hits(client,hit_type_id,random_indices,images_path,is_image_included = True)
+        create_hits(client,hit_type_id,random_indices,is_image_included = True)
         
     # Otherwise request images path input
     else:
-       print(f"Please provide images path folder like so 'python create_tasks.py <images_path>'")
+       print(f"Please provide the number of hits you would like to generate",
+              "'python create_tasks.py <number>'")
 
        

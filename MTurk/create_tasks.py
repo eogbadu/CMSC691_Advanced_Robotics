@@ -75,11 +75,15 @@ def create_hits(client,number_hits, images_path):
         command_string = random_row['Commander']
 
         # Find the image path
-        # comment out to replace placeholder cat
-        image_path = os.path.abspath("cat.jpg")
+        # comment out to replace placeholder cat once we get images folder
+        image_path = os.path.abspath("cat.jpg") # 
 
-        # Get the image path from the images_path folder
-        #image_path = '/path/to/your/image_directory/data.jpg'
+        # Get image folder_path
+        images_folder_path = os.path.join(parent_directory, images_path)
+
+        #Locate the image where the ith file_path matches the image file_path
+
+        # set the image_path to the correct image in images_folder_path
 
         # Read and encode each image as base 64
         with open(image_path, "rb") as image_file:

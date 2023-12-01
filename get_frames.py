@@ -32,7 +32,10 @@ def GetFrames (time, video_file_path, image_filename):
 
         # set the images dir
         images_dir = os.path.join(current_directory,IMAGES_PATH)
-
+        
+        #crop the images
+        frame = frame[70:480, 0:630]
+        
         # now write the image to the directory
         cv2.imwrite(os.path.join(images_dir,image_filename), frame)
         

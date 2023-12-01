@@ -1,5 +1,5 @@
 import boto3
-from config import access_id, secret_key, my_region_name
+from mturk.config import access_id, secret_key, my_region_name
 
 HIT_ID = '3Z3R5YC0QK781424O30AP0R02SMFTL'
 region_name = my_region_name

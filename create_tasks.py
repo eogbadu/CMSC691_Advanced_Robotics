@@ -6,6 +6,8 @@ import random  # to select a random row from our pair df
 import sys 
 import pandas as pd
 import get_frames as gf
+from PIL import Image
+from io import BytesIO
 
 # Constants
 IMAGES_PATH = 'images'
@@ -39,16 +41,11 @@ def client_setup():
         aws_secret_access_key=aws_secret_access_key,
     )
 
-    # This will return $10,000.00 in the MTurk Developer Sandbox
-    print("I have $" + client.get_account_balance()['AvailableBalance'] + " in my Sandbox account")
-
     return client
 
-def create_indices(number_hits, df):
+def create_indices(indices_count, df):
     
-    random_indices = random.sample(range(0, len(df)), number_hits)
-
-    print(random_indices)
+    random_indices = random.sample(range(0, len(df)), indices_count)
 
     return random_indices
 
@@ -62,7 +59,7 @@ def create_hit_type(client):
     my_hit_type = client.create_hit_type(
         Title = 'Select the best response to the instruction',
         Description = 'Read this instruction and select select the most appropriate response or action from the list provided: turn, move, send image, stop, or explore',
-        Reward = '0.10',
+        Reward = '0.05',
         AssignmentDurationInSeconds = 600,
         AutoApprovalDelayInSeconds = 172800,
         Keywords = 'text, quick, labeling',
@@ -74,67 +71,103 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client,hit_type_id,random_indices,is_image_included = False):
+def create_hits(client,hit_type_id, number_hits, random_indices,is_image_included = True):
     
     # read the pair data df
     df = read_pair_data() 
     
-    # Read the question file
-    question = open(file ='mturk/question.xml',mode='r').read()
+    images_folder = 'images'  # Replace this with your folder's path
+    images_folder_path = os.listdir(images_folder)
+    
+    # create a count variable
+    i = 0
 
-    #Extract the template string 
-    template_string = '"Text to Replace"'
+    # stop looping when you get through entire df or if you exceed the number hits
+    while ( (i < len(random_indices)) and (len(os.listdir(images_folder)) < number_hits) ):  
+        print("i inside loop:", i)
+        print("len(random_indices):",len(random_indices))
+        print("len(images_folder_path):", len(os.listdir(images_folder)))
+        print("number hits:",number_hits)
 
-    number_hits = len(random_indices)
-
-    for i in range(number_hits):
         #Iterate through random indices and select the index
         random_index = random_indices[i]
         
         #Extract the command from the pair table
         random_row = df.iloc[random_index]
         
-        command_string = random_row['Commander']
+        # Encode the image using the random index to find the image file path
+        encoded_image = encode_image(df, random_index)
 
-        # when we want the image included find the path
-        if is_image_included:
-            # Encode the image using the random index to find the image file path
-            #uncomment when this function is ready
-            encoded_image = encode_image(df, random_index)
+        # Only create hits when an image can be encoded
+        if encoded_image: 
+            
+            # Read the question file
+            question = open(file ='mturk/question.xml',mode='r').read()
 
-            # Replace the with the real image
-            question = question.replace('YOUR_IMAGE_DATA', encoded_image) 
-        #Otherwise, remove the image display in the xml file
-        else:
+            #Extract the template string 
+            template_string = '"Text to Replace"'
+
+            command_string = random_row['Commander']
+
+            new_question = question.replace(template_string, command_string)
+            
+            question_image = question.replace('YOUR_IMAGE_DATA', encoded_image) 
+
+            # Log or print the length of the generated XML
+            #print("Length of QuestionXML:", len(question_image))
+
+            # Print or log the XML content for inspection
+            #print("QuestionXML Content:")
+            #print(question_image)  # Log the XML content itself
+            
+            question_image = new_question
+
+            """# Create the second hit with the image
+            yes_image_hit = client.create_hit_with_hit_type(
+                HITTypeId=hit_type_id,
+                MaxAssignments=1,
+                LifetimeInSeconds=172800,
+                Question = question_image
+            )"""
+
+            # Print out the HIT related info
+            print("A new IMAGE HIT has been created. You can preview it here:")
+            """print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + yes_image_hit['HIT']['HITGroupId'])
+            print ("HITID = " + yes_image_hit['HIT']['HITId'] + " (Use to Get Results)")"""
+            # Remember to modify the URL above when you're publishing
+            # HITs to the live marketplace.
+            # Use: https://worker.mturk.com/mturk/preview?groupId="""
+
             # String literal of image div in question xml
             image_instruction = r"You may be provided an image for additional context."
-            
-            # remove the image instruction description string
-            question = question.replace(image_instruction, "")
+                
+                # remove the image instruction description string
+            question_no_image = new_question.replace(image_instruction, "")
 
-            # String literal of image div in question xml
+                # String literal of image div in question xml
             image_div = r"<img src='data:image/jpeg;base64,YOUR_IMAGE_DATA' alt='Image Placeholder' width='300' height='200'>"
+                
+                # remove the image div string
+            question_no_image = question_no_image.replace(image_div, "")
+
+            """# Create the new hit
+            no_image_hit = client.create_hit_with_hit_type(
+                HITTypeId=hit_type_id,
+                MaxAssignments=1,
+                LifetimeInSeconds=172800,
+                Question = question_no_image
+            )"""
+
+            # Print out the HIT related info
+            print("A new TEXT HIT has been created. You can preview it here:")
+            """print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + no_image_hit['HIT']['HITGroupId'])
+            print ("HITID = " + no_image_hit['HIT']['HITId'] + " (Use to Get Results)")"""
+            # Remember to modify the URL above when you're publishing
+            # HITs to the live marketplace.
+            # Use: https://worker.mturk.com/mturk/preview?groupId=
+
+        i += 1
             
-            # remove the image div string
-            question = question.replace(image_div, "")
-
-        """# Create the new hit
-        new_hit = client.create_hit_with_hit_type(
-            HITTypeId=hit_type_id,
-            MaxAssignments=1,
-            LifetimeInSeconds=172800,
-            Question = question.replace(template_string, command_string)
-        )"""
-
-        # Create a second hit with the image included
-
-        # Print out the HIT related info
-        print("A new HIT has been created. You can preview it here:")
-"""        print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + new_hit['HIT']['HITGroupId'])
-        print ("HITID = " + new_hit['HIT']['HITId'] + " (Use to Get Results)")"""
-        # Remember to modify the URL above when you're publishing
-        # HITs to the live marketplace.
-        # Use: https://worker.mturk.com/mturk/preview?groupId=
 
 def get_image(df_row):
     file_name = df_row['File Name']
@@ -167,17 +200,41 @@ def get_image(df_row):
     temp1 = "experiment" + expr_nbr 
     temp2 = expr_year + "_" + expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr
 
-    # Get the video file name that we intend to get frames from
-    video_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_navigator.ogv"
+    if expr_nbr == 1:
+        # Get the video file name that we intend to get frames from
+        video_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_navigator.ogv"
+        print(f"experiment: {expr_nbr}")
+    else:
+        # Get the video file name that we intend to get frames from
+        video_filename = expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_navigator.ogv"
 
     # Get the full path to the video
     video_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename)
-
+    
     # Get the frames
     timestamp = df_row["Timestamp"]
     image_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_" + f'{timestamp:.2f}' + "_navigator.jpg"
 
-    gf.GetFrames(timestamp, video_path, image_filename)
+    screen_recorder_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder")
+    
+    if not(os.path.exists(screen_recorder_path)):
+       print("Video folder does not exist for experiment")
+    
+    is_frame_extracted = gf.GetFrames(timestamp, video_path, image_filename)
+
+    # try to get the frame
+    if not (is_frame_extracted):
+        video_filename = expr_year + "_" + expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_navigator.ogv"
+        
+        # Get the full path to the video
+        video_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename)
+
+        # Now re-input the video_path
+        is_frame_extracted = gf.GetFrames(timestamp, video_path, image_filename)
+
+    if not(is_frame_extracted):
+        print("navigator file may not exist for experiment")
+        return False
 
     return image_filename
 
@@ -187,24 +244,45 @@ def encode_image(df, df_index):
 
     #Uncommment once you are connected to the SCOUT Box
     #Extract the command from the pair table
+    
     random_row = df.iloc[df_index]
 
-    image_filename = get_image(random_row)
+    # only encode if you can get the image first
+    if get_image(random_row):
+        image_filename = get_image(random_row)
 
-    # Get the current directory
-    current_directory = os.getcwd()
+        # Get the current directory
+        current_directory = os.getcwd()
 
-    # get the images directory
-    images_dir = os.path.join(current_directory, IMAGES_PATH)
+        # get the images directory
+        images_dir = os.path.join(current_directory, IMAGES_PATH)
 
-    # set the image_path
-    image_path =  os.path.join(images_dir, image_filename)
-            
-    # Read and encode each image as base 64
-    with open(image_path, "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-    
-    return encoded_image
+        # set the image_path
+        image_path =  os.path.join(images_dir, image_filename)
+
+        # open the image with pillow
+        image = Image.open(image_path)
+
+        max_width = 800 
+        max_height = 600
+        quality = 85
+
+        # Resize image
+        image.thumbnail((max_width, max_height), Image.BICUBIC)
+
+        # Compress the image
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG", quality=quality)
+        image_bytes = buffered.getvalue()
+
+         # Encode the image bytes as base64
+        encoded_image = base64.b64encode(image_bytes).decode('utf-8')    
+        
+        # Read and encode each image as base 64
+        #with open(image_path, "rb") as image_file:
+        #    return base64.b64encode(image_file.read()).decode("utf-8")
+        
+        return encoded_image
 
 if __name__ == "__main__":
     #check if user passes data folder argument
@@ -218,19 +296,19 @@ if __name__ == "__main__":
         # import the pair data df
         df = read_pair_data()
        
-        # Create random indices needed
-        random_indices = create_indices(number_hits, df)
+        # Create random indices needed for the entire df
+        random_indices = create_indices(len(df), df)
 
         hit_type_id = create_hit_type(client)
 
         # create hits without image included
-        create_hits(client,hit_type_id,random_indices,is_image_included = False)
+        create_hits(client,hit_type_id,number_hits,random_indices,is_image_included = False)
         
         # shuffle the indices
-        shuffle_indices(random_indices)
+        #shuffle_indices(random_indices)
     
         # create hits with image included
-        create_hits(client,hit_type_id,random_indices,is_image_included = True)
+        #create_hits(client,hit_type_id,random_indices,is_image_included = True)
         
     # Otherwise request images path input
     else:

@@ -1,7 +1,5 @@
 <HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
 <HTMLContent><![CDATA[
-<!-- YOUR HTML BEGINS -->
-<!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
@@ -15,9 +13,7 @@
         If it is unclear, select "None of the above".</h2>
         <h3> Instruction: "Text to Replace"</h3>
         <div>
-            <!-- Image placeholder -->
             <img src='data:image/jpeg;base64,YOUR_IMAGE_DATA' alt='Image Placeholder' width='300' height='200'>
-            <!-- Replace 'YOUR_IMAGE_DATA' with the iterated image -->
         </div>
         <div>
             <input type='radio' name='reported_signal' value='Turn'>Turn<br>
@@ -30,7 +26,6 @@
     <p><input type='submit' id='submitButton' value='Submit' /></p></form>
 <script language='Javascript'>turkSetAssignmentID();</script>
 </body></html>
-<!-- YOUR HTML ENDS -->
 ]]>
 </HTMLContent>
 <FrameHeight>600</FrameHeight>

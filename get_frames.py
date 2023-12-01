@@ -37,7 +37,10 @@ def GetFrames (time, video_file_path, image_filename):
         cv2.imwrite(os.path.join(images_dir,image_filename), frame)
         
         print(f"Successfully converted {image_filename} to image")
+
+        return True
     
     except Exception as e:
         print(f"Error: {e}")
+    return False
     

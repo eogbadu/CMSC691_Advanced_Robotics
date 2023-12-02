@@ -14,7 +14,6 @@
         <h3> Instruction: "Text to Replace"</h3>
         <div>
             <img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='300' height='200'>
-            <!-- Replace YOUR_IMAGE_URL_HERE with the actual URL of the image -->
         </div>
         <div>
             <input type='radio' name='reported_signal' value='Turn'>Turn<br>

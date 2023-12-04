@@ -20,7 +20,7 @@ ENDPOINT_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
 #ENDPOINT_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 S3_REGION = s3_region_name
-EXPIRATION_SECONDS = 172800
+EXPIRATION_SECONDS = 172800*4 
 NAVIGATOR_TYPE = 'navigator'
 
 
@@ -167,11 +167,11 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
             command_string = str(random_row['Commander'])
 
             new_question = question.replace(template_string, command_string)
-            
-            # get the image path
-            image_path = os.path.join(IMAGES_PATH,image_filename)
 
             expiration_seconds = EXPIRATION_SECONDS
+
+            # get the image path
+            image_path = os.path.join(IMAGES_PATH,image_filename)
 
             image_url = assign_url(bucket_client, image_path, image_filename, expiration_seconds)
 

@@ -1,0 +1,15 @@
+# remove data from tracking on github, but leave in local repo
+raw_data 
+processed_data
+images
+
+#virtual environment
+virtualenv
+
+mturk/config.py
+mturk/__pycache__
+__pycache__
+
+
+
+

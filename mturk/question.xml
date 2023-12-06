@@ -8,9 +8,11 @@
 <body>
     <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
         <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-        <h2>Given the instruction below select the most appropriate response or action from the list provided. 
-        You may be provided an image for additional context.
-        If it is unclear, select "None of the above".</h2>
+        <h2> Read all instructions carefully and then complete the question. You will be provided an instruction 
+        issued by a human and directed at a robot to perform. Your goal is to select the most appropriate response
+        or action that the <b>robot</b> should take. So imagine YOU are the ROBOT. 
+        You will be provided a still image of the robot's video feed from the moment the human issued the instruction.
+        If none of the options fit the instruction, select "None of the above".</h2>
         <h3> Instruction: "Text to Replace"</h3>
         <div>
             <img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='300' height='200'>

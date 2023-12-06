@@ -5,6 +5,9 @@ images/*
 
 #virtual environment
 virtualenv
+venv
+.venv
+env
 
 mturk/config.py
 mturk/__pycache__

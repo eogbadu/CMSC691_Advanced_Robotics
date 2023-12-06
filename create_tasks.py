@@ -12,6 +12,7 @@ from io import BytesIO
 # Constants
 IMAGES_PATH = 'images'
 VIDEOS_PATH = r"D:\SCOUT_RAV"
+#VIDEOS_PATH = r"/media/zmarg1/Padlock_DT"
 region_name = my_region_name
 aws_access_key_id = access_id
 aws_secret_access_key = secret_key
@@ -207,7 +208,7 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
                 # Use: https://worker.mturk.com/mturk/preview?groupId="""
 
                 # String literal of image div in question xml
-                image_instruction = r"You may be provided an image for additional context."
+                image_instruction = r"You will be provided a still image of the robot's video feed from the moment the human issued the instruction."
                     
                     # remove the image instruction description string
                 question_no_image = new_question.replace(image_instruction, "")

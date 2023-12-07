@@ -21,8 +21,10 @@ ENDPOINT_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
 #ENDPOINT_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 S3_REGION = s3_region_name
-EXPIRATION_SECONDS = 172800*4 
+DAY_IN_SECONDS = 86400
+#EXPIRATION_SECONDS = DAY_IN_SECONDS*3 
 NAVIGATOR_TYPE = 'navigator'
+HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
 
 
 def read_pair_data():
@@ -100,15 +102,25 @@ def assign_url(bucket_client, image_path, image_name, expiration_seconds):
     return url
 
 def create_hit_type(client):
+    # qualification requirement for hit type
+    qualification_requirements = [{
+        # replace with correct qualification type id you created 
+        'QualificationTypeId': '000000000000000000L0',  # This is the qualification for HIT approval rate
+        'Comparator': 'GreaterThan',
+        'IntegerValues': [98],
+        'RequiredToPreview': True
+    }]
+
+
     # Create a new HIT type 
     my_hit_type = client.create_hit_type(
-        Title = 'Select the best response to the instruction',
-        Description = 'Read this instruction and select select the most appropriate response or action from the list provided: turn, move, send image, stop, or explore',
+        Title = 'Select the best robot response to a human instruction',
+        Description = 'Given a human instruction, select the best response from a robot (multiple choice)',
         Reward = '0.05',
         AssignmentDurationInSeconds = 600,
-        AutoApprovalDelayInSeconds = 172800,
-        Keywords = 'text, quick, labeling',
-        QualificationRequirements=[]
+        AutoApprovalDelayInSeconds = DAY_IN_SECONDS *2,
+        Keywords = 'text, quick, multiple choice, selection',
+        QualificationRequirements=qualification_requirements
     )
 
     # save the hit type id
@@ -116,8 +128,7 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
-    
+def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):  
     # read the pair data df
     df = read_pair_data() 
     
@@ -169,7 +180,7 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
 
             new_question = question.replace(template_string, command_string)
 
-            expiration_seconds = EXPIRATION_SECONDS
+            expiration_seconds = DAY_IN_SECONDS * 3
 
             # get the image path
             image_path = os.path.join(IMAGES_PATH,image_filename)
@@ -195,7 +206,7 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
                 yes_image_hit = client.create_hit_with_hit_type(
                     HITTypeId=hit_type_id,
                     MaxAssignments=1,
-                    LifetimeInSeconds=172800,
+                    LifetimeInSeconds=expiration_seconds,
                     Question = question_image
                 )
 
@@ -208,13 +219,14 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
                 # Use: https://worker.mturk.com/mturk/preview?groupId="""
 
                 # String literal of image div in question xml
-                image_instruction = r"You will be provided a still image of the robot's video feed from the moment the human issued the instruction."
-                    
-                    # remove the image instruction description string
-                question_no_image = new_question.replace(image_instruction, "")
+                #image_instruction = r"You will be provided a still image of the robot's video feed from the moment the human issued the instruction."
+                #image_please_do = r"<li><strong> Inspect the image showing the robot's video feed.</strong></li>"
+
+                # remove the image instruction description string
+                question_no_image = new_question
 
                     # String literal of image div in question xml
-                image_div = r"<img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='300' height='200'>"
+                image_div = r"<img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='600' height='400'>"
                     
                     # remove the image div string
                 question_no_image = question_no_image.replace(image_div, "")
@@ -412,7 +424,8 @@ if __name__ == "__main__":
         # Create random indices needed for the entire df
         random_indices = create_indices(len(df), df)
 
-        hit_type_id = create_hit_type(client)
+        #hit_type_id = create_hit_type(client)
+        hit_type_id = HIT_TYPE_ID
 
         # create hits without image included
         create_hits(client,hit_type_id,number_hits,random_indices,bucket_client)

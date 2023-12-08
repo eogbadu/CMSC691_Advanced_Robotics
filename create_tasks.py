@@ -26,7 +26,9 @@ DAY_IN_SECONDS = 86400
 NAVIGATOR_TYPE = 'navigator'
 HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
 
+# Functions
 
+#
 def read_pair_data():
     # Get the current directory
     current_directory = os.getcwd()
@@ -41,6 +43,7 @@ def read_pair_data():
     return df
 
 
+# setup the mturk client
 def client_setup():
     client = boto3.client(
         'mturk',
@@ -53,6 +56,7 @@ def client_setup():
     return client
 
 
+# setup the s3 bucket client
 def bucket_setup():
     # Init the client
     s3_client = boto3.client(
@@ -66,6 +70,7 @@ def bucket_setup():
     return s3_client
 
 
+# creates random indices
 def create_indices(indices_count, df):
     
     random_indices = random.sample(range(0, len(df)), indices_count)
@@ -73,13 +78,14 @@ def create_indices(indices_count, df):
     return random_indices
 
 
+# reshuffles the random indices
 def shuffle_indices(random_indices):
     
     random.shuffle(random_indices)
     
     return random_indices
 
-
+# generates the url for the 
 def assign_url(bucket_client, image_path, image_name, expiration_seconds):
     
     bucket_name = S3_BUCKET_NAME 
@@ -101,6 +107,8 @@ def assign_url(bucket_client, image_path, image_name, expiration_seconds):
 
     return url
 
+
+# function to create a hit type
 def create_hit_type(client):
     # qualification requirement for hit type
     qualification_requirements = [{

@@ -8,17 +8,19 @@ import pandas as pd
 import get_frames as gf
 from PIL import Image
 from io import BytesIO
+import platform as sys_platform 
 
 # Constants
 IMAGES_PATH = 'images'
-VIDEOS_PATH = r"D:\SCOUT_RAV"
+WINDOWS_PATH = r"D:\SCOUT_RAV"
+LINUX_PATH = r"/media/zmarg1/Padlock_DT"
+#VIDEOS_PATH = r"D:\SCOUT_RAV"
 #VIDEOS_PATH = r"/media/zmarg1/Padlock_DT"
 region_name = my_region_name
 aws_access_key_id = access_id
 aws_secret_access_key = secret_key
-ENDPOINT_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com' 
-# Uncomment this line to use in production
-#ENDPOINT_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
+SANDBOX_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com' 
+LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 S3_REGION = s3_region_name
 DAY_IN_SECONDS = 86400
@@ -26,8 +28,28 @@ DAY_IN_SECONDS = 86400
 NAVIGATOR_TYPE = 'navigator'
 HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
 
-# Functions
+# retrieve the correct mturk endpoint sanbox/live
+def get_endpoint(url_type):
+    endpoint_url = SANDBOX_URL
+    if url_type == 'live':
+        endpoint_url = LIVE_URL
+    return endpoint_url
+    
 
+# Functions
+def platform():
+    # Get the current operating system
+    current_os = sys_platform.system()
+
+    # Determine the appropriate videos path based on OS
+    if current_os == "Windows":
+        videos_path = WINDOWS_PATH
+    elif current_os == "Linux":
+        videos_path = LINUX_PATH
+    else:
+        videos_path = WINDOWS_PATH
+
+    return videos_path
 #
 def read_pair_data():
     # Get the current directory
@@ -44,10 +66,10 @@ def read_pair_data():
 
 
 # setup the mturk client
-def client_setup():
+def client_setup(endpoint_url):
     client = boto3.client(
         'mturk',
-        endpoint_url=ENDPOINT_URL,
+        endpoint_url=endpoint_url,
         region_name=region_name,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
@@ -136,7 +158,7 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):  
+def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client, url_type):  
     # read the pair data df
     df = read_pair_data() 
     
@@ -218,9 +240,19 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
                     Question = question_image
                 )
 
+                mturk_url = url_type
+
+                if url_type == "live":
+                    mturk_url = "https://worker.mturk.com/mturk/preview?groupId="
+                else:
+                    print("Sandbox type")
+                    mturk_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+
                 # Print out the HIT related info
                 print("A new IMAGE HIT has been created. You can preview it here:")
-                print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + yes_image_hit['HIT']['HITGroupId'])
+                #sandbox_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+                #live_url = "https://worker.mturk.com/mturk/preview?groupId="
+                print (mturk_url + yes_image_hit['HIT']['HITGroupId'])
                 print ("HITID = " + yes_image_hit['HIT']['HITId'] + " (Use to Get Results)")
                 # Remember to modify the URL above when you're publishing
                 # HITs to the live marketplace.
@@ -249,7 +281,9 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
 
                 # Print out the HIT related info
                 print("A new TEXT HIT has been created. You can preview it here:")
-                print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + no_image_hit['HIT']['HITGroupId'])
+                #sandbox_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+                #live_url = "https://worker.mturk.com/mturk/preview?groupId="
+                print (mturk_url + no_image_hit['HIT']['HITGroupId'])
                 print ("HITID = " + no_image_hit['HIT']['HITId'] + " (Use to Get Results)")
                 # Remember to modify the URL above when you're publishing
                 # HITs to the live marketplace.
@@ -304,14 +338,16 @@ def get_image(df_row, video_type):
 
     video_filename = expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
 
+    videos_path = platform()
+
     # Get the full path to the video
-    video_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename)
+    video_path = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename)
     
     # Get the frames
     timestamp = df_row["Timestamp"]
     image_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_" + f'{timestamp:.2f}' + "_" + video_type + ".jpg"
 
-    screen_recorder_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder")
+    screen_recorder_path = os.path.join(videos_path, temp1, temp2, "Screen_recorder")
     
     if not(os.path.exists(screen_recorder_path)):
        print(f"Screen Recorder folder does not exist for experiment: {screen_recorder_path}")
@@ -326,7 +362,7 @@ def get_image(df_row, video_type):
         video_filename_year_check = expr_year + "_" + expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
         
         # Get the full path to the video
-        video_path_year_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_year_check)
+        video_path_year_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_year_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_year_check, image_filename)
@@ -338,7 +374,7 @@ def get_image(df_row, video_type):
         video_filename_expnum_check = expr_month + "_" + expr_day + "_" + "experiment" + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
         
         # Get the full path to the video
-        video_path_expnum_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_expnum_check)
+        video_path_expnum_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_expnum_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_expnum_check, image_filename)
@@ -350,7 +386,7 @@ def get_image(df_row, video_type):
         video_filename_period_check = expr_month + "_" + expr_day + "_" + "experiment" + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + "." + ".ogv"
         
         # Get the full path to the video
-        video_path_period_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_period_check)
+        video_path_period_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_period_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_period_check, image_filename)
@@ -419,9 +455,17 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         # accept the second argument as the number hits
         number_hits = int(sys.argv[1])
-       
+
+        url_type = input("'sandbox' or 'live'?: ")
+
+        #determine if you want to sandbox or live
+        while (url_type != 'sandbox' and url_type != 'live'):
+            url_type = input("restate entry: ")
+
+        endpoint_url = get_endpoint(url_type)
+
         # setup the client
-        client = client_setup()
+        client = client_setup(endpoint_url)
 
         # setup bucket client
         bucket_client = bucket_setup()
@@ -436,7 +480,7 @@ if __name__ == "__main__":
         hit_type_id = HIT_TYPE_ID
 
         # create hits without image included
-        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client)
+        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client, url_type)
         
         # shuffle the indices
         #shuffle_indices(random_indices)

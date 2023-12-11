@@ -6,6 +6,7 @@ import pandas as pd
 import string
 import random
 import nltk
+import plotly.express as px
 
 # Uncomment and run this line to download the NLTK words corpus if you haven't already
 #nltk.download('words')
@@ -20,7 +21,7 @@ DAY_IN_SECONDS = 86400
 HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
 
 
-def get_results(client, hit_type_id, answer_key, results_df):
+def get_results(client, hit_type_id, answer_key):
    # Iterate over each item in list hits
    rows_to_append = []
    
@@ -81,7 +82,10 @@ def get_results(client, hit_type_id, answer_key, results_df):
    # Append all collected rows to the results DataFrame
    rows_df = pd.DataFrame(rows_to_append)
    
-   #update the results df
+   # initialize a results dataframe
+   results_df = init_results_df()
+
+   #populate the results df
    updated_results_df = pd.concat([results_df, rows_df], ignore_index=True)
    
    return updated_results_df 
@@ -141,7 +145,9 @@ def init_results_df():
 
 
 # Makes a bunch of dummy data 
-def create_dummy(results_df, num_rows):
+def create_dummy(num_rows):
+   results_df = init_results_df()
+   
    rows_to_append = []
    
    # Create lists to store generated data
@@ -188,7 +194,69 @@ def create_dummy(results_df, num_rows):
       
    return updated_results_df
 
+def read_results():
+   # Get the current directory
+   current_directory = os.getcwd()
 
+   processed_path = os.path.join(current_directory, 'processed_data')
+
+   #create excel from the results_df
+   results_df = pd.read_excel(os.path.join(processed_path,'mturk_results.xlsx'))
+   
+   return results_df
+
+def analyze_results(mturk_results):
+   # Count the total number of entries with and without images
+   total_with_image = mturk_results[mturk_results['with_image'] == 1]['matching'].count()
+   total_without_image = mturk_results[mturk_results['with_image'] == 0]['matching'].count()
+
+   # Count the number of matches with and without images
+   matches_with_image = mturk_results[(mturk_results['with_image'] == 1) & (mturk_results['matching'] == 1)]['matching'].count()
+   matches_without_image = mturk_results[(mturk_results['with_image'] == 0) & (mturk_results['matching'] == 1)]['matching'].count()
+
+   # Calculate the percentage of matches for entries with images
+   percentage_matches_with_image = 0
+   if total_with_image > 0:
+      percentage_matches_with_image = (matches_with_image / total_with_image) * 100
+
+   # Calculate the percentage of matches for entries without images
+   percentage_matches_without_image = 0
+   if total_without_image > 0:
+      percentage_matches_without_image = (matches_without_image / total_without_image) * 100
+
+   # Display the results
+   print("Total entries with image:", total_with_image)
+   print("Total entries without image:", total_without_image)
+   print("Matches with image:", matches_with_image)
+   print("Matches without image:", matches_without_image)
+   print("Percentage of matches with image:", percentage_matches_with_image)
+   print("Percentage of matches without image:", percentage_matches_without_image)
+
+   # Calculate standard errors
+   error_with_image = (percentage_matches_with_image / 100) * ((total_with_image - matches_with_image) / total_with_image)**0.5 if total_with_image > 0 else 0
+   error_without_image = (percentage_matches_without_image / 100) * ((total_without_image - matches_without_image) / total_without_image)**0.5 if total_without_image > 0 else 0
+
+   # Create a DataFrame for plotting
+   data = {
+      'Category': ['With Image', 'Without Image'],
+      'Percentage of Matches': [percentage_matches_with_image, percentage_matches_without_image],
+      'Error': [error_with_image, error_without_image]
+   }
+   df = pd.DataFrame(data)
+
+   # Create a bar plot with error bars using Plotly
+   fig = px.bar(df, x='Category', y='Percentage of Matches', error_y='Error', color='Category',
+               labels={'Percentage of Matches': 'Percentage of Matches', 'Category': 'Category'},
+               title='Comparison of Matches with and without Images')
+   
+   fig.update_traces(error_x=dict(visible=False), width=0.5)  # Hiding x-axis error bars and adjusting bar width
+   fig.show()
+
+   # Save the plot as a static image (e.g., PNG)
+   #fig.write_image("static_plot.png")
+
+   # Save the plot as an HTML file
+   fig.write_html("mturk_analysis.html")
 
 if __name__ == "__main__":    
    # accept the second argument as the number hits
@@ -208,15 +276,36 @@ if __name__ == "__main__":
 
    answer_key = get_key()
 
-   results_df  = init_results_df()
+   # dummy data section
+   data_type = input ("Real or dummy data? ")
 
-   #updated_results_df = get_results(client, hit_type_id,answer_key,results_df)
-
-   num_rows = int(input("How many rows of dummy data?: "))
+   while (data_type != 'dummy' and data_type != 'real'):
+      data_type = input ("Real or dummy data? ")
    
-   while (num_rows < 1):
-      num_rows = int(input("Hey, how many rows of dummy data??: "))
+   if data_type == 'dummy':
+      num_rows = int(input("How many rows of dummy data? (0 for no new data): "))
+      
+      if num_rows > 0:
+         print("Creating" + num_rows + "rows of dummy data")
+         updated_results_df = create_dummy(num_rows)
+         export_results(updated_results_df)
+      elif num_rows == 0:
+         print('No new rows added to the dummy data')
+      else:
+         print("Invalid entry")
+   else:
+      print("processing data from mturk and exporting ...")
+      updated_results_df = get_results(client, hit_type_id,answer_key)
+      export_results(updated_results_df)
 
-   updated_results_df = create_dummy(results_df,num_rows)
+   # Now read the results from the mturk results file
+   mturk_results = read_results()
 
-   export_results(updated_results_df)
+   #Analyze results
+   analyze_results(mturk_results)
+
+
+
+
+
+   

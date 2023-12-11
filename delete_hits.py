@@ -52,6 +52,8 @@ def delete_hits(client):
             print('Deleted')
 
 if __name__ == "__main__":
+    user_confirm = input("Are you sure you want to delete all hits? Type Y to confirm: ")
     
-    client = client_setup()
-    delete_hits(client)
+    if user_confirm == 'Y':
+        client = client_setup()
+        delete_hits(client)

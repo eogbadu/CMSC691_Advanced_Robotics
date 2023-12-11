@@ -35,7 +35,6 @@ def get_endpoint(url_type):
         endpoint_url = LIVE_URL
     return endpoint_url
     
-
 # Functions
 def platform():
     # Get the current operating system
@@ -243,6 +242,7 @@ def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client,
                 mturk_url = url_type
 
                 if url_type == "live":
+                    print("Live type")
                     mturk_url = "https://worker.mturk.com/mturk/preview?groupId="
                 else:
                     print("Sandbox type")

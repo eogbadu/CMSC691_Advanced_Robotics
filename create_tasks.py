@@ -26,7 +26,7 @@ S3_REGION = s3_region_name
 DAY_IN_SECONDS = 86400
 #EXPIRATION_SECONDS = DAY_IN_SECONDS*3 
 NAVIGATOR_TYPE = 'navigator'
-HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
+HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
 
 # retrieve the correct mturk endpoint sanbox/live
 def get_endpoint(url_type):

@@ -19,6 +19,7 @@ LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 DAY_IN_SECONDS = 86400
 HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
+ANALYSIS_PATH = 'analysis'
 
 
 def get_results(client, hit_type_id, answer_key):
@@ -256,7 +257,7 @@ def analyze_results(mturk_results):
    #fig.write_image("static_plot.png")
 
    # Save the plot as an HTML file
-   fig.write_html("mturk_analysis.html")
+   fig.write_html(f'{ANALYSIS_PATH}/mturk_analysis.html')
 
 if __name__ == "__main__":    
    # accept the second argument as the number hits

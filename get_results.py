@@ -142,12 +142,12 @@ def init_results_df():
 
 # Makes a bunch of dummy data 
 def create_dummy(results_df, num_rows):
-   # Iterate over each item in list hits
    rows_to_append = []
    
    # Create lists to store generated data
    hitid_list = []
    predefined_commands = ['Turn', 'Move', 'Send photo', 'Stop', 'Explore']
+   
    # Using NLTK to get words from its corpus and create a random command
    words = nltk.corpus.words.words()
    random_command = ' '.join(random.choices(words, k=random.randint(1, 3)))

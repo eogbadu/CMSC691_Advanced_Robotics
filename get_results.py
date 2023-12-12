@@ -18,7 +18,7 @@ SANDBOX_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
 LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 DAY_IN_SECONDS = 86400
-HIT_TYPE_ID = '3MID1PD49XFUZY6UDB2YCDJUH80WKQ'
+HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
 ANALYSIS_PATH = 'analysis'
 
 
@@ -63,7 +63,9 @@ def get_results(client, hit_type_id, answer_key):
                   print("Command: " + command)
                   print("Correct Answer :" + real_output)
                   print("Submitted answer: " + submitted_answer)
-                  print("Matching: "+ str(is_correct)) 
+                  print("Matching: "+ str(is_correct))
+                  print(f"Image included: {'yes' if with_image else 'no'}")
+                  print("\n") 
 
                   # Store the row to append to the DataFrame
                   rows_to_append.append({
@@ -226,6 +228,7 @@ def analyze_results(mturk_results):
       percentage_matches_without_image = (matches_without_image / total_without_image) * 100
 
    # Display the results
+   print("Total entries:", total_with_image+total_without_image)
    print("Total entries with image:", total_with_image)
    print("Total entries without image:", total_without_image)
    print("Matches with image:", matches_with_image)
@@ -251,13 +254,15 @@ def analyze_results(mturk_results):
                title='Comparison of Matches with and without Images')
    
    fig.update_traces(error_x=dict(visible=False), width=0.5)  # Hiding x-axis error bars and adjusting bar width
-   fig.show()
 
    # Save the plot as a static image (e.g., PNG)
    #fig.write_image("static_plot.png")
 
    # Save the plot as an HTML file
    fig.write_html(f'{ANALYSIS_PATH}/mturk_analysis.html')
+   
+   #fig.show()
+
 
 if __name__ == "__main__":    
    # accept the second argument as the number hits

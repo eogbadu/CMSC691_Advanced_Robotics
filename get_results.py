@@ -7,6 +7,9 @@ import string
 import random
 import nltk
 import plotly.express as px
+import matplotlib.pyplot as plt
+import scipy.stats as stats
+
 
 # Uncomment and run this line to download the NLTK words corpus if you haven't already
 #nltk.download('words')
@@ -19,68 +22,76 @@ LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 DAY_IN_SECONDS = 86400
 HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
-ANALYSIS_PATH = 'analysis'
 
 
 def get_results(client, hit_type_id, answer_key):
    # Iterate over each item in list hits
    rows_to_append = []
    
-   # iterate over each item in list hits
-   for item in client.list_hits()['HITs']:
-      # retrieve the hit id
-      hit_id = item['HITId']
-      hit_type = item['HITTypeId']  # Fetch the HIT Type ID for comparison
-      print('HITId:', hit_id)
+   paginator = client.get_paginator('list_hits')
+   response_iterator = paginator.paginate(MaxResults=100)  # Adjust MaxResults as needed
    
-      # Check if the HIT matches the provided hit_type_id
-      if hit_type == hit_type_id:
-   
-         worker_results = client.list_assignments_for_hit(
-            HITId=hit_id, AssignmentStatuses=['Submitted'])
+   total_hits = 0
 
-         if worker_results['NumResults'] > 0:
-                        
-            for assignment in worker_results['Assignments']:
-               xml_doc = xmltodict.parse(assignment['Answer'])
+   for response in response_iterator:
+      hits = response['HITs']
+      total_hits += len(hits)
+      print("Total hits so far:", total_hits)
 
-               print("Worker's answer was:")
-              # Find matching hit_id in 'yes_image' column
-               matching_hit = answer_key[answer_key['hitid_yes_image'] == hit_id]
-               with_image = True 
-               
-               if matching_hit.empty:
-                  # Find matching hit_id in "no image" column 
-                  matching_hit = answer_key[answer_key['hitid_no_image'] == hit_id]
-                  with_image = False
-               
-               if not matching_hit.empty:
-                  command = matching_hit.iloc[0]['Commander']
-                  real_output = matching_hit.iloc[0]['Dialogue Move']
-                  submitted_answer = xml_doc['QuestionFormAnswers']['Answer']['FreeText']
-                  is_correct = check_correct(real_output,submitted_answer)
+      for item in hits:
+         # retrieve the hit id
+         hit_id=item['HITId']
+         hit_type = item['HITTypeId']  # Fetch the HIT Type ID for comparison
+         print('HITId:', hit_id)
+
+         # Check if the HIT matches the provided hit_type_id
+         if hit_type == hit_type_id:
+      
+            worker_results = client.list_assignments_for_hit(
+               HITId=hit_id, AssignmentStatuses=['Submitted'])
+
+            if worker_results['NumResults'] > 0:
+                           
+               for assignment in worker_results['Assignments']:
+                  xml_doc = xmltodict.parse(assignment['Answer'])
+
+                  print("Worker's answer was:")
+               # Find matching hit_id in 'yes_image' column
+                  matching_hit = answer_key[answer_key['hitid_yes_image'] == hit_id]
+                  with_image = True 
                   
-                  print("Command: " + command)
-                  print("Correct Answer :" + real_output)
-                  print("Submitted answer: " + submitted_answer)
-                  print("Matching: "+ str(is_correct))
-                  print(f"Image included: {'yes' if with_image else 'no'}")
-                  print("\n") 
+                  if matching_hit.empty:
+                     # Find matching hit_id in "no image" column 
+                     matching_hit = answer_key[answer_key['hitid_no_image'] == hit_id]
+                     with_image = False
+                  
+                  if not matching_hit.empty:
+                     command = matching_hit.iloc[0]['Commander']
+                     real_output = matching_hit.iloc[0]['Dialogue Move']
+                     submitted_answer = xml_doc['QuestionFormAnswers']['Answer']['FreeText']
+                     is_correct = check_correct(real_output,submitted_answer)
+                     
+                     print("Command: " + str(command))
+                     print("Correct Answer :" + real_output)
+                     print("Submitted answer: " + submitted_answer)
+                     print("Matching: "+ str(is_correct))
+                     print(f"Image included: {'yes' if with_image else 'no'}")
+                     print("\n") 
 
-                  # Store the row to append to the DataFrame
-                  rows_to_append.append({
-                     'hitid': hit_id,
-                     'command': command,
-                     'real_output': real_output,
-                     'submitted_answer': submitted_answer,
-                     'with_image': int(with_image),
-                     'matching': int(is_correct)
-                  })
-               else:
-                  print("HIT ID not found in answer_key")
+                     # Store the row to append to the DataFrame
+                     rows_to_append.append({
+                        'hitid': hit_id,
+                        'command': command,
+                        'real_output': real_output,
+                        'submitted_answer': submitted_answer,
+                        'with_image': int(with_image),
+                        'matching': int(is_correct)
+                     })
+                  else:
+                     print("HIT ID not found in answer_key")
 
-         else:
-            print("No results ready yet")
+            else:
+               print("No results ready yet")
    
    # Append all collected rows to the results DataFrame
    rows_df = pd.DataFrame(rows_to_append)
@@ -197,71 +208,6 @@ def create_dummy(num_rows):
       
    return updated_results_df
 
-def read_results():
-   # Get the current directory
-   current_directory = os.getcwd()
-
-   processed_path = os.path.join(current_directory, 'processed_data')
-
-   #create excel from the results_df
-   results_df = pd.read_excel(os.path.join(processed_path,'mturk_results.xlsx'))
-   
-   return results_df
-
-def analyze_results(mturk_results):
-   # Count the total number of entries with and without images
-   total_with_image = mturk_results[mturk_results['with_image'] == 1]['matching'].count()
-   total_without_image = mturk_results[mturk_results['with_image'] == 0]['matching'].count()
-
-   # Count the number of matches with and without images
-   matches_with_image = mturk_results[(mturk_results['with_image'] == 1) & (mturk_results['matching'] == 1)]['matching'].count()
-   matches_without_image = mturk_results[(mturk_results['with_image'] == 0) & (mturk_results['matching'] == 1)]['matching'].count()
-
-   # Calculate the percentage of matches for entries with images
-   percentage_matches_with_image = 0
-   if total_with_image > 0:
-      percentage_matches_with_image = (matches_with_image / total_with_image) * 100
-
-   # Calculate the percentage of matches for entries without images
-   percentage_matches_without_image = 0
-   if total_without_image > 0:
-      percentage_matches_without_image = (matches_without_image / total_without_image) * 100
-
-   # Display the results
-   print("Total entries:", total_with_image+total_without_image)
-   print("Total entries with image:", total_with_image)
-   print("Total entries without image:", total_without_image)
-   print("Matches with image:", matches_with_image)
-   print("Matches without image:", matches_without_image)
-   print("Percentage of matches with image:", percentage_matches_with_image)
-   print("Percentage of matches without image:", percentage_matches_without_image)
-
-   # Calculate standard errors
-   error_with_image = (percentage_matches_with_image / 100) * ((total_with_image - matches_with_image) / total_with_image)**0.5 if total_with_image > 0 else 0
-   error_without_image = (percentage_matches_without_image / 100) * ((total_without_image - matches_without_image) / total_without_image)**0.5 if total_without_image > 0 else 0
-
-   # Create a DataFrame for plotting
-   data = {
-      'Category': ['With Image', 'Without Image'],
-      'Percentage of Matches': [percentage_matches_with_image, percentage_matches_without_image],
-      'Error': [error_with_image, error_without_image]
-   }
-   df = pd.DataFrame(data)
-
-   # Create a bar plot with error bars using Plotly
-   fig = px.bar(df, x='Category', y='Percentage of Matches', error_y='Error', color='Category',
-               labels={'Percentage of Matches': 'Percentage of Matches', 'Category': 'Category'},
-               title='Comparison of Matches with and without Images')
-   
-   fig.update_traces(error_x=dict(visible=False), width=0.5)  # Hiding x-axis error bars and adjusting bar width
-
-   # Save the plot as a static image (e.g., PNG)
-   #fig.write_image("static_plot.png")
-
-   # Save the plot as an HTML file
-   fig.write_html(f'{ANALYSIS_PATH}/mturk_analysis.html')
-   
-   #fig.show()
 
 
 if __name__ == "__main__":    
@@ -303,12 +249,6 @@ if __name__ == "__main__":
       print("processing data from mturk and exporting ...")
       updated_results_df = get_results(client, hit_type_id,answer_key)
       export_results(updated_results_df)
-
-   # Now read the results from the mturk results file
-   mturk_results = read_results()
-
-   #Analyze results
-   analyze_results(mturk_results)
 
 
 

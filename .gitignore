@@ -14,6 +14,11 @@ mturk/config.py
 mturk/__pycache__
 __pycache__
 
+# R
+.RData
+.Rhistory
 
 
 
+
+.Rproj.user

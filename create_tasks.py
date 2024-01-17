@@ -1,30 +1,25 @@
-import boto3
-from mturk.config import access_id, secret_key, my_region_name, s3_region_name
+"""Script to generates Mturk tasks"""
 import os
-import base64
 import random  # to select a random row from our pair df
-import sys 
+import sys
+import platform as sys_platform
+import boto3
 import pandas as pd
+from mturk.config import access_id, secret_key, my_region_name, s3_region_name
 import get_frames as gf
-from PIL import Image
-from io import BytesIO
-import platform as sys_platform 
 
 # Constants
 IMAGES_PATH = 'images'
 WINDOWS_PATH = r"D:\SCOUT_RAV"
 LINUX_PATH = r"/media/zmarg1/Padlock_DT"
-#VIDEOS_PATH = r"D:\SCOUT_RAV"
-#VIDEOS_PATH = r"/media/zmarg1/Padlock_DT"
-region_name = my_region_name
-aws_access_key_id = access_id
-aws_secret_access_key = secret_key
-SANDBOX_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com' 
+REGION_NAME = my_region_name
+ACCESS_ID = access_id
+SECRET_KEY = secret_key
+SANDBOX_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
 LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 S3_REGION = s3_region_name
 DAY_IN_SECONDS = 86400
-#EXPIRATION_SECONDS = DAY_IN_SECONDS*3 
 NAVIGATOR_TYPE = 'navigator'
 HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
 
@@ -69,9 +64,9 @@ def client_setup(endpoint_url):
     client = boto3.client(
         'mturk',
         endpoint_url=endpoint_url,
-        region_name=region_name,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
+        region_name=REGION_NAME,
+        aws_access_key_id=ACCESS_ID,
+        aws_secret_access_key=SECRET_KEY,
     )
 
     return client
@@ -84,8 +79,8 @@ def bucket_setup():
         's3',
         config=boto3.session.Config(signature_version='s3v4'),
         region_name=s3_region_name,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
+        aws_access_key_id=ACCESS_ID,
+        aws_secret_access_key=SECRET_KEY,
     )
     
     return s3_client

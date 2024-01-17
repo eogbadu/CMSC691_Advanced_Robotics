@@ -25,13 +25,28 @@ HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
 
 # retrieve the correct mturk endpoint sanbox/live
 def get_endpoint(url_type):
+    """determines the correct mturk url endpoint based provided 
+    type of url
+    Args:
+        url_type (string): expects string of 'live'
+        or 'sandbox'(default)
+
+    Returns:
+        string: url string to interact with mturk
+    """
     endpoint_url = SANDBOX_URL
     if url_type == 'live':
         endpoint_url = LIVE_URL
     return endpoint_url
-    
+
+
 # Functions
 def platform():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     # Get the current operating system
     current_os = sys_platform.system()
 
@@ -46,6 +61,11 @@ def platform():
     return videos_path
 #
 def read_pair_data():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     # Get the current directory
     current_directory = os.getcwd()
 
@@ -61,6 +81,14 @@ def read_pair_data():
 
 # setup the mturk client
 def client_setup(endpoint_url):
+    """_summary_
+
+    Args:
+        endpoint_url (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     client = boto3.client(
         'mturk',
         endpoint_url=endpoint_url,
@@ -74,6 +102,11 @@ def client_setup(endpoint_url):
 
 # setup the s3 bucket client
 def bucket_setup():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     # Init the client
     s3_client = boto3.client(
         's3',
@@ -88,7 +121,15 @@ def bucket_setup():
 
 # creates random indices
 def create_indices(indices_count, df):
-    
+    """_summary_
+
+    Args:
+        indices_count (_type_): _description_
+        df (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     random_indices = random.sample(range(0, len(df)), indices_count)
 
     return random_indices
@@ -96,14 +137,31 @@ def create_indices(indices_count, df):
 
 # reshuffles the random indices
 def shuffle_indices(random_indices):
-    
+    """_summary_
+
+    Args:
+        random_indices (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     random.shuffle(random_indices)
     
     return random_indices
 
 # generates the url for the 
 def assign_url(bucket_client, image_path, image_name, expiration_seconds):
-    
+    """_summary_
+
+    Args:
+        bucket_client (_type_): _description_
+        image_path (_type_): _description_
+        image_name (_type_): _description_
+        expiration_seconds (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     bucket_name = S3_BUCKET_NAME 
 
     # Upload the image to the bucket
@@ -126,6 +184,14 @@ def assign_url(bucket_client, image_path, image_name, expiration_seconds):
 
 # function to create a hit type
 def create_hit_type(client):
+    """_summary_
+
+    Args:
+        client (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # qualification requirement for hit type
     qualification_requirements = [{
         # replace with correct qualification type id you created 
@@ -152,9 +218,20 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client, url_type):  
+
+def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client, url_type):
+    """_summary_
+
+    Args:
+        client (_type_): _description_
+        hit_type_id (_type_): _description_
+        number_hits (_type_): _description_
+        random_indices (_type_): _description_
+        bucket_client (_type_): _description_
+        url_type (_type_): _description_
+    """
     # read the pair data df
-    df = read_pair_data() 
+    df = read_pair_data()
     
     images_folder = 'images'  # Replace this with your folder's path
     
@@ -166,12 +243,7 @@ def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client,
     i = 0
 
     # stop looping when you get through entire df or if you exceed the number hits
-    while ( (i < len(random_indices)) and (len(os.listdir(images_folder)) < number_hits) ):  
-        """print("i inside loop:", i)
-        print("len(random_indices):",len(random_indices))
-        print("len(images_folder_path):", len(os.listdir(images_folder)))
-        print("number hits:",number_hits)"""
-
+    while ( (i < len(random_indices)) and (len(os.listdir(images_folder)) < number_hits) ):
         #Iterate through random indices and select the index
         random_index = random_indices[i]
         
@@ -186,18 +258,12 @@ def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client,
         # Only create hits when an image can extracted
         image_filename = get_image(random_row,video_type)
 
-        """
-        # To test the issues of finding files
-        if not image_filename:
-            break
-        """
-
         if image_filename: 
 
             # Read the question file
             question = open(file ='mturk/question.xml',mode='r').read()
 
-            #Extract the template string 
+            #Extract the template string
             template_string = '"Text to Replace"'
 
             command_string = str(random_row['Commander'])
@@ -301,6 +367,15 @@ def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client,
 
 
 def get_image(df_row, video_type):
+    """_summary_
+
+    Args:
+        df_row (_type_): _description_
+        video_type (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     file_name = df_row['File Name']
 
     # Break up file name into parts
@@ -395,55 +470,6 @@ def get_image(df_row, video_type):
     
     return image_filename
 
-# delete once we know hosting works
-while False:
-    def encode_image(df, df_index):
-        # comment out to replace placeholder cat once we get images folder
-        #image_path = os.path.abspath("cat.jpg")
-
-        #Uncommment once you are connected to the SCOUT Box
-        #Extract the command from the pair table
-        
-        random_row = df.iloc[df_index]
-
-        # only encode if you can get the image first
-        if get_image(random_row):
-
-            image_filename = get_image(random_row)
-
-            # Get the current directory
-            current_directory = os.getcwd()
-
-            # get the images directory
-            images_dir = os.path.join(current_directory, IMAGES_PATH)
-
-            # set the image_path
-            image_path =  os.path.join(images_dir, image_filename)
-
-            """# Delete once we know it is safe not to compress the images
-            # open the image with pillow
-            image = Image.open(image_path)
-
-            max_width = 800 
-            max_height = 600
-            quality = 85
-
-            # Resize image
-            image.thumbnail((max_width, max_height), Image.BICUBIC)
-
-            # Compress the image
-            buffered = BytesIO()
-            image.save(buffered, format="JPEG", quality=quality)
-            image_bytes = buffered.getvalue()
-
-            # Encode the image bytes as base64
-            encoded_image = base64.b64encode(image_bytes).decode('utf-8')"""
-            
-            """# Read and encode each image as base 64
-            with open(image_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode("utf-8")"""
-            
-            #return encoded_image"
 
 if __name__ == "__main__":
     #check if user passes data folder argument
@@ -451,16 +477,16 @@ if __name__ == "__main__":
         # accept the second argument as the number hits
         number_hits = int(sys.argv[1])
 
-        url_type = input("'sandbox' or 'live'?: ")
+        url_input = input("'sandbox' or 'live'?: ")
 
         #determine if you want to sandbox or live
-        while (url_type != 'sandbox' and url_type != 'live'):
-            url_type = input("restate entry: ")
+        while url_input not in ('sandbox', 'live'):
+            url_input = input("restate entry: ")
 
-        endpoint_url = get_endpoint(url_type)
+        my_endpoint = get_endpoint(url_input)
 
         # setup the client
-        client = client_setup(endpoint_url)
+        client = client_setup(my_endpoint)
 
         # setup bucket client
         bucket_client = bucket_setup()
@@ -475,17 +501,9 @@ if __name__ == "__main__":
         hit_type_id = HIT_TYPE_ID
 
         # create hits without image included
-        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client, url_type)
-        
-        # shuffle the indices
-        #shuffle_indices(random_indices)
-    
-        # create hits with image included
-        #create_hits(client,hit_type_id,random_indices,is_image_included = True)
+        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client, url_input)
         
     # Otherwise request images path input
     else:
-       print(f"Please provide the number of hits you would like to generate",
-              "'python create_tasks.py <number>'")
-
-       
+        print("Please provide the number of hits you would like to generate",
+             "'python create_tasks.py <number>'")

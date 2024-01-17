@@ -8,7 +8,6 @@ import tkinter.messagebox as messagebox
 import tkinter.simpledialog as simpledialog
 
 
-
 region_name = my_region_name
 aws_access_key_id = access_id
 aws_secret_access_key = secret_key

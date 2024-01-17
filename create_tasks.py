@@ -8,22 +8,48 @@ import pandas as pd
 import get_frames as gf
 from PIL import Image
 from io import BytesIO
+import platform as sys_platform 
 
 # Constants
 IMAGES_PATH = 'images'
-VIDEOS_PATH = r"D:\SCOUT_RAV"
+WINDOWS_PATH = r"D:\SCOUT_RAV"
+LINUX_PATH = r"/media/zmarg1/Padlock_DT"
+#VIDEOS_PATH = r"D:\SCOUT_RAV"
+#VIDEOS_PATH = r"/media/zmarg1/Padlock_DT"
 region_name = my_region_name
 aws_access_key_id = access_id
 aws_secret_access_key = secret_key
-ENDPOINT_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com' 
-# Uncomment this line to use in production
-#ENDPOINT_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
+SANDBOX_URL = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com' 
+LIVE_URL = 'https://mturk-requester.us-east-1.amazonaws.com'
 S3_BUCKET_NAME = 'scoutmturk'
 S3_REGION = s3_region_name
-EXPIRATION_SECONDS = 172800*4 
+DAY_IN_SECONDS = 86400
+#EXPIRATION_SECONDS = DAY_IN_SECONDS*3 
 NAVIGATOR_TYPE = 'navigator'
+HIT_TYPE_ID = '3YL80J4YSN59X6W7TCKLDTZWBCXA7R'
 
+# retrieve the correct mturk endpoint sanbox/live
+def get_endpoint(url_type):
+    endpoint_url = SANDBOX_URL
+    if url_type == 'live':
+        endpoint_url = LIVE_URL
+    return endpoint_url
+    
+# Functions
+def platform():
+    # Get the current operating system
+    current_os = sys_platform.system()
 
+    # Determine the appropriate videos path based on OS
+    if current_os == "Windows":
+        videos_path = WINDOWS_PATH
+    elif current_os == "Linux":
+        videos_path = LINUX_PATH
+    else:
+        videos_path = WINDOWS_PATH
+
+    return videos_path
+#
 def read_pair_data():
     # Get the current directory
     current_directory = os.getcwd()
@@ -38,10 +64,11 @@ def read_pair_data():
     return df
 
 
-def client_setup():
+# setup the mturk client
+def client_setup(endpoint_url):
     client = boto3.client(
         'mturk',
-        endpoint_url=ENDPOINT_URL,
+        endpoint_url=endpoint_url,
         region_name=region_name,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
@@ -50,6 +77,7 @@ def client_setup():
     return client
 
 
+# setup the s3 bucket client
 def bucket_setup():
     # Init the client
     s3_client = boto3.client(
@@ -63,6 +91,7 @@ def bucket_setup():
     return s3_client
 
 
+# creates random indices
 def create_indices(indices_count, df):
     
     random_indices = random.sample(range(0, len(df)), indices_count)
@@ -70,13 +99,14 @@ def create_indices(indices_count, df):
     return random_indices
 
 
+# reshuffles the random indices
 def shuffle_indices(random_indices):
     
     random.shuffle(random_indices)
     
     return random_indices
 
-
+# generates the url for the 
 def assign_url(bucket_client, image_path, image_name, expiration_seconds):
     
     bucket_name = S3_BUCKET_NAME 
@@ -98,16 +128,28 @@ def assign_url(bucket_client, image_path, image_name, expiration_seconds):
 
     return url
 
+
+# function to create a hit type
 def create_hit_type(client):
+    # qualification requirement for hit type
+    qualification_requirements = [{
+        # replace with correct qualification type id you created 
+        'QualificationTypeId': '000000000000000000L0',  # This is the qualification for HIT approval rate
+        'Comparator': 'GreaterThan',
+        'IntegerValues': [98],
+        'RequiredToPreview': True
+    }]
+
+
     # Create a new HIT type 
     my_hit_type = client.create_hit_type(
-        Title = 'Select the best response to the instruction',
-        Description = 'Read this instruction and select select the most appropriate response or action from the list provided: turn, move, send image, stop, or explore',
+        Title = 'Select the best robot response to a human instruction',
+        Description = 'Given a human instruction, select the best response from a robot (multiple choice)',
         Reward = '0.05',
         AssignmentDurationInSeconds = 600,
-        AutoApprovalDelayInSeconds = 172800,
-        Keywords = 'text, quick, labeling',
-        QualificationRequirements=[]
+        AutoApprovalDelayInSeconds = DAY_IN_SECONDS *2,
+        Keywords = 'text, quick, multiple choice, selection',
+        QualificationRequirements=qualification_requirements
     )
 
     # save the hit type id
@@ -115,8 +157,7 @@ def create_hit_type(client):
 
     return hit_type_id
 
-def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
-    
+def create_hits(client, hit_type_id, number_hits, random_indices, bucket_client, url_type):  
     # read the pair data df
     df = read_pair_data() 
     
@@ -168,7 +209,7 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
 
             new_question = question.replace(template_string, command_string)
 
-            expiration_seconds = EXPIRATION_SECONDS
+            expiration_seconds = DAY_IN_SECONDS * 3
 
             # get the image path
             image_path = os.path.join(IMAGES_PATH,image_filename)
@@ -194,26 +235,38 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
                 yes_image_hit = client.create_hit_with_hit_type(
                     HITTypeId=hit_type_id,
                     MaxAssignments=1,
-                    LifetimeInSeconds=172800,
+                    LifetimeInSeconds=expiration_seconds,
                     Question = question_image
                 )
 
+                mturk_url = url_type
+
+                if url_type == "live":
+                    print("Live type")
+                    mturk_url = "https://worker.mturk.com/mturk/preview?groupId="
+                else:
+                    print("Sandbox type")
+                    mturk_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+
                 # Print out the HIT related info
                 print("A new IMAGE HIT has been created. You can preview it here:")
-                print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + yes_image_hit['HIT']['HITGroupId'])
+                #sandbox_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+                #live_url = "https://worker.mturk.com/mturk/preview?groupId="
+                print (mturk_url + yes_image_hit['HIT']['HITGroupId'])
                 print ("HITID = " + yes_image_hit['HIT']['HITId'] + " (Use to Get Results)")
                 # Remember to modify the URL above when you're publishing
                 # HITs to the live marketplace.
                 # Use: https://worker.mturk.com/mturk/preview?groupId="""
 
                 # String literal of image div in question xml
-                image_instruction = r"You may be provided an image for additional context."
-                    
-                    # remove the image instruction description string
-                question_no_image = new_question.replace(image_instruction, "")
+                #image_instruction = r"You will be provided a still image of the robot's video feed from the moment the human issued the instruction."
+                #image_please_do = r"<li><strong> Inspect the image showing the robot's video feed.</strong></li>"
+
+                # remove the image instruction description string
+                question_no_image = new_question
 
                     # String literal of image div in question xml
-                image_div = r"<img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='300' height='200'>"
+                image_div = r"<img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='600' height='400'>"
                     
                     # remove the image div string
                 question_no_image = question_no_image.replace(image_div, "")
@@ -228,7 +281,9 @@ def create_hits(client,hit_type_id, number_hits, random_indices,bucket_client):
 
                 # Print out the HIT related info
                 print("A new TEXT HIT has been created. You can preview it here:")
-                print ("https://workersandbox.mturk.com/mturk/preview?groupId=" + no_image_hit['HIT']['HITGroupId'])
+                #sandbox_url = "https://workersandbox.mturk.com/mturk/preview?groupId="
+                #live_url = "https://worker.mturk.com/mturk/preview?groupId="
+                print (mturk_url + no_image_hit['HIT']['HITGroupId'])
                 print ("HITID = " + no_image_hit['HIT']['HITId'] + " (Use to Get Results)")
                 # Remember to modify the URL above when you're publishing
                 # HITs to the live marketplace.
@@ -283,14 +338,16 @@ def get_image(df_row, video_type):
 
     video_filename = expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
 
+    videos_path = platform()
+
     # Get the full path to the video
-    video_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename)
+    video_path = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename)
     
     # Get the frames
     timestamp = df_row["Timestamp"]
     image_filename = expr_month + "_" + expr_day + "_experiment_" + participant_nbr + "_" + expr_location + "_" + f'{timestamp:.2f}' + "_" + video_type + ".jpg"
 
-    screen_recorder_path = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder")
+    screen_recorder_path = os.path.join(videos_path, temp1, temp2, "Screen_recorder")
     
     if not(os.path.exists(screen_recorder_path)):
        print(f"Screen Recorder folder does not exist for experiment: {screen_recorder_path}")
@@ -305,7 +362,7 @@ def get_image(df_row, video_type):
         video_filename_year_check = expr_year + "_" + expr_month + "_" + expr_day + "_" + temp1 + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
         
         # Get the full path to the video
-        video_path_year_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_year_check)
+        video_path_year_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_year_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_year_check, image_filename)
@@ -317,7 +374,7 @@ def get_image(df_row, video_type):
         video_filename_expnum_check = expr_month + "_" + expr_day + "_" + "experiment" + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + ".ogv"
         
         # Get the full path to the video
-        video_path_expnum_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_expnum_check)
+        video_path_expnum_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_expnum_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_expnum_check, image_filename)
@@ -329,7 +386,7 @@ def get_image(df_row, video_type):
         video_filename_period_check = expr_month + "_" + expr_day + "_" + "experiment" + "_" + participant_nbr + "_" + expr_location + "_"+ video_type + "." + ".ogv"
         
         # Get the full path to the video
-        video_path_period_check = os.path.join(VIDEOS_PATH, temp1, temp2, "Screen_recorder", video_filename_period_check)
+        video_path_period_check = os.path.join(videos_path, temp1, temp2, "Screen_recorder", video_filename_period_check)
 
         # Now re-input the video_path
         is_frame_extracted = gf.GetFrames(timestamp, video_path_period_check, image_filename)
@@ -398,9 +455,17 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         # accept the second argument as the number hits
         number_hits = int(sys.argv[1])
-       
+
+        url_type = input("'sandbox' or 'live'?: ")
+
+        #determine if you want to sandbox or live
+        while (url_type != 'sandbox' and url_type != 'live'):
+            url_type = input("restate entry: ")
+
+        endpoint_url = get_endpoint(url_type)
+
         # setup the client
-        client = client_setup()
+        client = client_setup(endpoint_url)
 
         # setup bucket client
         bucket_client = bucket_setup()
@@ -411,10 +476,11 @@ if __name__ == "__main__":
         # Create random indices needed for the entire df
         random_indices = create_indices(len(df), df)
 
-        hit_type_id = create_hit_type(client)
+        #hit_type_id = create_hit_type(client)
+        hit_type_id = HIT_TYPE_ID
 
         # create hits without image included
-        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client)
+        create_hits(client,hit_type_id,number_hits,random_indices,bucket_client, url_type)
         
         # shuffle the indices
         #shuffle_indices(random_indices)

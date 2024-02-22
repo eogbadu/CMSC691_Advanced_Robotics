@@ -1,0 +1,123 @@
+<HTMLQuestion
+    xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
+    <HTMLContent><![CDATA[
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+    <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+</head>
+<style>
+    /* Add styling for the instructions container */
+    .instructions {
+        border: 1px solid #ccc; /* Border style */
+        padding: 10px; /* Padding to give space */
+        margin-bottom: 20px; /* Space between instructions and other content */
+    }
+    
+    /* Additional styles for better visual appearance */
+    .panel-heading {
+        background-color: #f0f0f0;
+        padding: 5px;
+        margin-bottom: 10px;
+    }
+
+    /* New styles to create a side-by-side layout */
+        .container {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .image-container {
+            flex: 1;
+            margin-right: 10px; /* Adjust the margin as needed */
+        }
+
+        .response-options {
+            flex: 1;
+            margin-left: 10px;
+        }
+
+        /* To ensure responsive behavior */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .image-container,
+            .response-options {
+                margin: 0; /* Reset margins */
+                flex: auto;
+            }
+        }
+</style>
+<body>
+    <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
+        <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+        <div class="instructions">
+            <div class="panel-heading">
+                <strong>Instructions</strong>
+            </div>
+        <p>
+            <b>Please read all instructions carefully and then complete the question.</b> 
+            By performing this HIT, you agree that<font color="red"> you have
+            read the description of the study being undertaken, and give consent for the data you enter to be
+            used for research.
+            </font>
+            &nbsp;Please 
+            <a target="blank" href="https://iral.cs.umbc.edu/Consent_Form--MarguliesOgbaduClassProject.pdf">read the consent form</a>. If you would prefer not to take part in this experiment, please return this
+            HIT.
+        </p>
+        <p>
+            You will be provided an instruction issued by a human and directed at a robot to perform. 
+            Your goal is to select the most appropriate response or action that the <b>robot</b> should take.
+            So imagine <b><span style="color:red;">YOU are the ROBOT</span></b>. 
+            You may be provided a still image of the robot's video feed from the moment the 
+            human issued the instruction.
+            If none of the options fit the instruction, select "None of the above".
+
+            <p><strong>Please do the following:</strong></p>
+
+            <ul>
+                <li><strong> Read the "Human Instruction".</strong></li>
+                <li><strong> Inspect the image showing the robot's video feed (if provided).</strong></li>
+                <li><strong> Select the best response the robot should take from the options provided.</strong></li>
+                <li><strong> Select "None of the above" if none of the options fit.</strong></li>
+            </ul>
+
+            <p><strong>Please do not:</strong></p>
+            <ul>
+                <li><strong> Make a selection without reading the "Human Instruction".</strong></li>
+                <li><strong> Make a selection without inspecting the image (if provided).</strong></li>
+            </ul>
+        </p>
+    </div>
+    <div class = "container">
+        <div class="image-container">
+            <h3> Human instruction: <span style="font-weight: normal;">""Text to Replace""</span></h3>
+            <div>
+                <img src='YOUR_IMAGE_URL_HERE' alt='Image Placeholder' width='600' height='400'>
+            </div>
+        </div>
+        <div class="response-options">
+            <h3>
+                Robot response options:
+            </h3>
+            <div>
+                <input type='radio' name='reported_signal' value='Turn'>Turn<br>
+                <input type='radio' name='reported_signal' value='Move'>Move<br>
+                <input type='radio' name='reported_signal' value='Send photo'>Send photo<br>
+                <input type='radio' name='reported_signal' value='Stop'>Stop<br>
+                <input type='radio' name='reported_signal' value='Explore'>Explore<br>
+                <input type='radio' name='reported_signal' value='None of the Above'>None of the Above<br>
+            </div>
+            <p><input type='submit' id='submitButton' value='Submit' />
+            </p>
+    </div>
+    </div>
+</form>
+<script language='Javascript'>turkSetAssignmentID();</script>
+</body></html>
+]]>
+</HTMLContent>
+    <FrameHeight>600</FrameHeight>
+</HTMLQuestion>

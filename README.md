@@ -1,5 +1,9 @@
 # Building a Dialogue Classification System for Human-Robot Interactions
 
+## Video Explainer
+
+Watch [this brief explainer](https://www.youtube.com/watch?v=osUNWaqUXEg) for an overview of the project background, purpose, and methodology.
+
 ## Authors
 Ekele Ogbadu & Zach Margulies 
 
